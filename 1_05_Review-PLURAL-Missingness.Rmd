@@ -1,0 +1,443 @@
+# Review PLURAL Missingness
+# Env Exposures & Segregation 1940 to 2010
+# Elizabeth Blake
+
+Description: In this file, Elizabeth has reviewed all counties missing PLURAL (rurality) data, looked at RUCA measures, Census records, and other maps, and input suggestions on the rurality of counties missing the rurality measure. These counties are missing the value becuase PLURAL is based on Census places, and if a specific county does not have a Census place, then the county level PLURAL value would be missing.
+
+```{r load packages}
+if(!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
+pacman::p_load(here, folders, readr, dplyr, tidyr, stringr, purrr, knitr, snakecase, ggplot2, ggmap, sf, tigris, MetBrewer, tidyverse, sp, readr, ggnewscale)
+```
+
+```{r load data}
+# Be sure to edit this filepath to match your computer's filepath
+counties_missing_plural <- read_csv("data/merged_data/counties_missing_plural.csv")
+
+counties_missing_plural <- counties_missing_plural %>%
+  mutate(plural_notes = if_else(str_detect(plural_notes, "no place in county"), NA, plural_notes))
+
+# sum(is.na(counties_missing_plural$plural_notes))
+
+# RUCA: https://www.ers.usda.gov/data-products/rural-urban-commuting-area-codes/ 
+# Census Records: https://catalog.archives.gov/search-within/821491; https://www.census.gov/library/publications/1942/dec/population-vol-1.html
+```
+
+RUCA, or Rural-Urban Commuting Areas, are being used as a comparison because they are a commonly used metric to measure rurality in the 2000s. These values would help us gain more detailed information about the rurality or urbanicity of a county in 2010.
+
+The links above to Census Records are helpful because they provide some access to older maps, including from the 1940s, which may be useful in understanding the rurality of a county at that time period. They also provide population counts for 1940 for a variety of spatial units. 
+
+
+```{r 2010 counties}
+#### 2010 Counties ####
+
+# We will first review five counties missing a PLURAL value in 2010, in the "2010 counties" codechunk.
+
+```
+
+```{r 2010 - RI, VT, VA}
+
+# Bristol, RI
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "44001"] <- "designated 1 by RUCA; looks like a lively beach town with a historic feel in the downtown area that seems more urban but with surrounding suburban areas, nothing like a rural Kansas but not NYC"
+ 
+# Grand Isle, VT
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "50013"] <- "designated 2 by RUCA; basically a bunch of islands; cities South Hero and Alburg seems somewhat urban; many state parks; besides the few cities seems rural; idk about 2 from RUCA"
+
+# Greensville, VA
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "51081"] <- "designated 8 by RUCA; Emporia city within county as own entity; does look pretty rural when excluding city; 8 seems right"
+ 
+# James City, VA
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "51095"] <- "designated 1 by RUCA; Williamsburg is the closest point; the surrounding area/suburbs are urban and there is a decent road network in the county, but not where near anything like a NYC "
+  
+# Powhatan, VA
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "51145"] <- "designated 2 by RUCA; bordering Richmond VA; mostly small towns across the county; almost entirely green on the google map; decent road network, so richmond and other towns are very accessible"
+
+```
+
+```{r 1940 counties}
+#### 1940 Counties ####
+
+# Everything from this point on will refer to 1940 counties.
+
+```
+
+```{r 1940 - DC}
+####DC####
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "1100010"] <- "urban; DC is a city"
+```
+
+```{r 1940 - National Parks}
+####National Parks#### 
+# Yellowstone National Park, Wyoming
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5600470"] <- "yellowstone national park; rural"
+# Yellowstone National Park, Montana
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3001130"] <- "yellowstone national park; rural"
+# Yellowstone National Park, Idaho
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "1600875"] <- "yellowstone national park; rural"
+```
+
+```{r 1940 - VA}
+####Virginia#### 
+# Amelia, VA; 5100070; https://catalog.archives.gov/id/51435426 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5100070"] <- "mostly farms according to the census map; decent road network not all necessarily paved; bottom of the 1950 map includes that is is considered rural"
+
+# Virginia, Bath	5100170
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5100170"] <- "rural; 10 from 2010 RUCA; 1940 census has no urban pop"
+
+# Virginia, Bedford	5100190; https://catalog.archives.gov/id/5840251
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5100190"] <- "one main city in 1940 bedford; good road network not all highways but; avg of 2 from RUCA 2010; only 3,973 of 29,687 lived in urban areas so rural is a safe bet"
+
+# Virginia, Bland	5100210; https://catalog.archives.gov/id/5840253
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5100210"] <- "today its mostly wilderness and moutains and the one main town of bland so I can only imagine it was even more rual in 40s; 1940 census says no urban pop"
+  
+# Virginia, Charles City	5100360; https://catalog.archives.gov/id/5840270
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5100360"] <- "mid ranking in terms of popD and charles city was there but nowhere near the same size as today; very connected road network but current day map is mostly green so probably leaning rural, about 30 miles outside richmond"
+
+# Virginia, Cumberland	5100490; https://catalog.archives.gov/id/5840285 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5100490"] <- "only real city from 40s was cumberland and while there is a main highway running through there is little else in the county, also there is a state forest in the county currently; ruca 2010 avg 5 (2 and 8, probably a 2 for the city and 8 for the rest so rural is a safe bet"
+
+# Virginia, Gloucester	5100730
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5100730"] <- "near the cheasepeake bay with one main highway but many unpaved highways and road networks with towns throughout but they could be rural and farming towns, its hard to tell, i would lean rural"
+  
+# Virginia, Goochland	5100750
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5100750"] <- "the columbia plural1 city point is right next to the county with a ~.8; looking around google maps now it looks like a small town so again can only assume it was more rural and farming in 40s; according to census map most of roads in 40s were unpaved/gravel"
+
+# Virginia, Henrico	5100870; https://catalog.archives.gov/id/5840330 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5100870"] <- "basically the county encompasses everything around Richmond which is obviously a decent sized city so basically Richmond's suburbs; doesn’t seem rural espically compared to some other maps but idk if fully urban like DC or Manhattan; higher end of popD"
+
+# Virginia, James City	5100950; 1 
+counties_missing_plural$plural_notes[counties_missing_plural$cnty_name == "VirginiaJames City"] <- "rural; no urban pop in 1940 according to census; does not include williamsburg point but county has includes the surrounding area to the south; the williamsburg point has plural1 around .6"
+
+# Virginia, King And Queen	5100970 2.5 ; https://catalog.archives.gov/id/5840339
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5100970"] <- "rural; no urban pop according to the census; dragon run state forest in middle of county; large river network"
+  
+# Virginia, King George	5100990; avg 7 mostly high but one 2; https://catalog.archives.gov/id/5840341
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5100990"] <- "rural; no urban pop according to the 1940 census; port royale closest point outside county right to the south (plural1_ew	0.729424); many farms on the ed map"
+  
+# Virginia, Matthews	5101150; 2 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5101150"] <- "rural; no urban pop according to the 1940s census; on the bay; no close points"
+  
+# Virginia, Nelson	5101250; 2 2s and a 10 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5101250"] <- "rural; no urban pop; no points in county but points from surrounding counties are all around .7 (plural1)"
+
+# Virginia, New Kent	5101270; 2; https://catalog.archives.gov/id/5840374 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5101270"] <- "rural; a county away from Richmond but too far to get the sprawl; 1940 census says no urban pop"
+
+# Virginia, Northumberland	5101330 ; https://catalog.archives.gov/id/5840383
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5101330"] <- "rural; 2010 RUCA scored 10; census map looks rural with some main highways connecting; on the Chesapeake Bay; no urban pop accord census"
+
+# Virginia, Powhatan	5101450; 2 ; https://catalog.archives.gov/id/5840396
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5101450"] <- "rural; no urban pop acc 1940 census; again outside of richmond by a county and doesnt seem to really include current sprawl so; looks silmalr to other .7 plural1 areas; only 8 eds"
+
+# Virginia, Prince George	5101490; https://catalog.archives.gov/id/5840402
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5101490"] <- "rural; no urban pop acc 1940 census; borders petersburg and includes city/town of hopewell; middle of the pack for popD; i would still probably lean rural with the petersburg sprawl"
+
+# Virginia, Richmond	5101590
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5101590"] <- "rural; richmond county which excludes richmond city; 10 RUCA from 2010; no urban pop acc 1940 census"
+
+# South Norfolk City, VA
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5107805"] <- "norfolk is a current day very urban city, the 1940s counties shapefiles do not include Norfolk itself but it is right next to it and definitely is populated and built and apparently it was a center for WW2 ship building; only urban pop according to 1940 census"
+
+# Virginia, Spotsylvania	5101770; 1 https://catalog.archives.gov/id/5840445
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5101770"] <- "rural; no urban pop acc to 1940 census; includes the sprawl of fredricksburg but not a lot, the rest of the county seems like many small towns and rivers"
+  
+# Virginia, Stafford	5101790; 1; https://catalog.archives.gov/id/5840447
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5101790"] <- "rural; no urban pop acc to 1940 census; only 8 eds; borders spotsylvania to the north; northern part of county includes around half of quantico; also borders fredricksburg but ed map shows mostly farms and rivers"
+  
+# Virginia, Warwick	5101890 turned into James City, Newport News, York, Hampton; https://catalog.archives.gov/id/5840459
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5101890"] <- "higher end of popD even though 1940s census says no urban pop"
+
+```
+
+```{r 1940 - NV}
+####Nevada####
+# Nevada, Douglas	3200050; https://catalog.archives.gov/id/5835431 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3200050"] <- "somewhat developed around Miden which is where the county seat is today; a majority of the county though looks undeveloped as of the census map"
+
+# Nevada, Esmeralda	3200090; https://catalog.archives.gov/id/5835436
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3200090"] <- "10 for 2010 RUCA; census map looks barren"
+
+# Nevada, Eureka	3200110; https://catalog.archives.gov/id/5835438
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3200110"] <- "10 for 2010 RUCA; census map looks barren"
+
+# Nevada, Lander	3200150; https://catalog.archives.gov/id/5835442
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3200150"] <- "7 (small town) for 2010 RUCA; census map contains really one main road; a few small towns scattered"
+
+# Nevada, Lincoln	3200170; https://catalog.archives.gov/id/5835444
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3200170"] <- "2 from 2010 RUCA; seems like more towns than lander along the highway concentrated in one area but the rest shows pretty empty; very low popD"
+
+# Nevada, Mineral	3200210: https://catalog.archives.gov/id/5835448
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3200210"] <- "avg 6 RUCA 2010; small towns running along the highway around the moutains; seems mostly mining and ag"
+
+# Nevada, Nye	3200230; https://catalog.archives.gov/id/5835450
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3200230"] <- "avg 5.9 RUCA 2010; similar to mineral, mostly small towns in between moutains; looks spread out"
+
+# Nevada, Storey	3200290; https://catalog.archives.gov/id/5835456
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3200290"] <- "mostly moutains with some cities concentrated at the bottom of the county but adjecent to Reno (1940 pop was 21,317) which is in a different county and does have a plural point"
+```
+
+```{r 1940 - CA}
+#####California####
+# California, Alpine 600030
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "0600030"] <- "rural; RUCA 2010 is a 10 and I can only assume there was even less in the 40s, a lot of moutains and national forest; 1940 Alpine split into 7 counties some in CA others in NV"
+
+# California, Mono	0600510; Avg 2010 RUCA 9; https://catalog.archives.gov/id/5823090 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "0600510"] <- "rural; 9 from 2010 RUCA' mostly mountains"
+
+# California, Plumas	0600630; Avg 2010 RUCA 7.8; https://catalog.archives.gov/id/5823117
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "0600630"] <- "rural; 7.8 from 2010 RUCA; the entire county is basically the national forest"
+
+# California, Trinity	0601050; Avg 2010 RUCA 10 ; https://catalog.archives.gov/id/5823215 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "0601050"] <- "rural; 10 from 2010 RUCA; again basically just plumas the majority of the county is the national forest; with various towns scattered about"
+```
+
+```{r 1940 - AZ}
+####Arizona####
+# Apache, AZ: 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "0400010"] <- "rural; average RUCA 2010 is 7.8; a majoirty of the current day county is Navajo nation, cannot find a 1940 map but checking the crosswalk we see Apache 1940 county split by 2010 into 8 counties some in AZ some in NM"
+
+# Mohave, AZ 0400150; https://catalog.archives.gov/id/5822973 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "0400150"] <- "7.8 avg from 2010 RUCA; census maps looks very empty but the county is right next to vegas but vegas was not super developed back then so"
+```
+
+```{r 1940 - FL}
+####Florida####
+# Liberty, FL; 1200770
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "1200770"] <- "southern part of the county is basically just forest and the maps seem pretty rural; no points in the county and the surrounding plural points are .8 rurality"
+```
+
+```{r 1940 - AL}
+####Alabama####
+# Washington AL; https://catalog.archives.gov/id/333345244 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "0101290"] <- "rural; the average RUCA for 2010 for the county is 5 and so I can only assume it was even more rural in the 40s; the map is pretty barren"
+```
+
+```{r 1940 - MD}
+####Maryland####
+# Howard, MD; 2400270
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2400270"] <- " a lot of points surrouding the county; good road network; a few cities like ellicot city but it is very small and not to the extent of today; also idk how scientific this is but my dad who lived in MD in the 70s said it was very rural"
+```
+
+```{r 1940 - KY}
+####Kentucky####
+# Jackson, Kentucky 2101090 https://catalog.archives.gov/id/5831947
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2101090"] <- "avg 2010 RUCA is 6 and the 1940 maps has a decent road network with little towns spreasd out, small town vibes"
+
+# Leslie, Kentucky 2101310; https://catalog.archives.gov/id/5831983?objectPage=3
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2101310"] <- "10 from 2010 RUCA so probably very rural in 40s, like jackson with small town spread out throughout the county"
+
+# McCreary, Kentucky 2101470
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2101470"] <- "avg 2010 RUCA is a 7; mostly forested; turned into 7 different counties by 2010; had one so called urban area Stearns but it still looks small today so" 
+```
+
+```{r 1940 - MI}
+####Michigan####
+# Oscoda, MI; 2601350; https://catalog.archives.gov/id/5832982
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2601350"] <- "10 from RUCA in 2010 so; 40s map empty and rural looking"
+```
+
+```{r 1940 - WI}
+####Wisconsin####
+# Florence, Wisconsin; 5500370; 5; https://catalog.archives.gov/id/5840730 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "5500370"] <- "only 9 eds in 1940; avg 5 for ruca 2010; western part of county is forest; many lakes and rivers; closest point outside county to the east is in Kingford which has a plural1 of around .7; i would lean rural"
+```
+
+```{r 1940 - UT}
+####Utah####
+# Daggett, UT; 4900090; 10: https://catalog.archives.gov/id/5840158
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4900090"] <- "rural; 2010 ruca 10; rural; few 1940 eds; current day the county includes a national forest and red canyon' nopoints super close" 
+```
+
+```{r 1940 - NC}
+####North Carolina####
+# Currituck, NC; 3700530; avg 4 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3700530"] <- "on the atlantic, the two main parts of the county are seperated by a bay; closest point is about 8 miles from the county line and plural1 of about .7, beach town; would lean rural as it seems like a current day vacation spot that was developed up over the years"
+```
+
+```{r 1940 - ND}
+####North Dakota####
+# Billings, ND; 3800070; 10; https://catalog.archives.gov/id/5834600
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3800070"] <- "2010 RUCA 10; rural and small scale map with very organized and parceled land; rural"
+```
+
+```{r 1940 - NH}
+####New Hampshire####
+# Carroll, NH; 3300030; avg 8.7
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3300030"] <- "very forested and green all over map, 2010 ruca is avg 8.7, in 1940 had some cities along the main highways ie wakefield and conway, the northern part of the county are the white moutains; Laconia point around 9 miles away; would lean rural based on mountains"
+```
+
+```{r 1940 - MS}
+####Mississippi####
+# Issaquena, MS 2800550; 10 ; https://catalog.archives.gov/id/5833704
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2800550"] <- "2010 RUCA score is a 10; along the mississippi; theres a point right outside the county lines on the west with (plural1_ew	0.775585), has a national forest to the east of the county lines" 
+```
+
+```{r 1940 - MA}
+####Massachusetts####
+# Dukes, MA; 2500070; https://catalog.archives.gov/id/5832341
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2500070"] <- "county home to matha's vineyard so an island; was used in the 40s for WW2 training; aprrox 3 main coastal towns; for reference nantucket has a plural1_ew	0.714923"
+```
+
+```{r 1940 - LA}
+####Louisiana####
+# Cameron, LA	2200230; avg 7.3 (2 10s and a 2); https://catalog.archives.gov/id/5832163 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2200230"] <- "rural; 2010 ruca avg 7.3 (2 10s and a 2); multiple wildlife refuges in the county (on current day and 40s map) and lakes; port arthur to the east of the county across the water"
+  
+# Plaquemines, LA	2200750; avg 4.7; https://catalog.archives.gov/id/5832233 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2200750"] <- "rural; basically all little islands and a lot of water/tributaries and wildlife refugues"
+  
+# St Bernard, LA	2200870; avg 1.5; https://catalog.archives.gov/id/5832247
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2200870"] <- "right next to Plaquemines too the east; also bordered NOLA which could mean a certain degree of sprawl as NOLA has been a huge port/city since the French in 1700s; definitely more cities but while close to Nola in the west it does spread out pretty far into the gulf and include the a large swamp ares to the west, had to say one urban or rural because this split; also a paved highway"
+  
+# St Charles, LA	2200890; avg 1; https://catalog.archives.gov/id/5832249
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2200890"] <- "ruca 2010 is a 1; borders NOLA on the west side; more roads than Plaquemines and most houses/development on the 40s map is centered around the MS river"
+  
+# St John The Baptist, LA	2200950; avg 1.8; https://catalog.archives.gov/id/5832255 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2200950"] <- "ruca 2010 avg 1.8; county split by the ms river; very close point to the east of county line (plural1_ew	0.762644); i would say rural probably"
+```
+
+```{r 1940 - ME}
+####Maine####
+# Franklin, ME	2300070 avg 9.6; https://catalog.archives.gov/id/5832630
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2300070"] <- "rural; 2010 ruca avg 9.6; mostly mountains on the 40s map with ponds scattered around; one main highway"
+
+# Lincoln, ME	2300150; avg 8.8; https://catalog.archives.gov/id/5832660
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2300150"] <- "leaning rural; ruca 2010 avg 8.8; on the atlantic; US 1 runs through county; coastal region probably with fishing adn farming in 40s; good roads tho"
+
+# Piscataquis, ME	2300210; avg 8.8; https://catalog.archives.gov/id/5832691
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "2300210"] <- "rural; ruca 2010 avg 8.8; some little towns in the county that got their own larger scale ed maps but still small one road towns that I would not conisder urban"
+```
+
+```{r 1940 - MT}
+####Montana####
+# Garfield, MT 3000330; https://catalog.archives.gov/id/5833985
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3000330"] <- "rural; 2010 ruca is 10; low popd; very straight edges or parcels of land"
+# Powder River, MT 3000750; https://catalog.archives.gov/id/5834033 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3000750"] <- "rural; 2010 ruca is a 10; low popd (higher than garfield but); "
+```
+
+```{r 1940 - NE}
+####Nebraska####
+# Nebraska, Arthur 3100050; https://catalog.archives.gov/id/5834723?objectPage=2
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3100050"] <- "rural: RUCA 2010 is a 10; 1940 census map is very empty"
+
+# Banner, NE 3100070; https://catalog.archives.gov/id/5834725
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3100070"] <- "rural; RUCA 2010 is a 10; only 7 large eds that are very grid like; one main highway in current day so; closest point is to the northeast (plural1_ew	0.825581)"
+
+# Mcpherson, NE 3101170
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3101170"] <- "rural; RUCA 2010 is a 10; only 6 large eds that are very grid like; closest point is approx 10 miles away on the east (plural1_ew	0.864106)"
+```
+
+```{r 1940 - NM}
+####New Mexico####
+# Catron, NM; 3500030
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3500030"] <- "rural; RUCA 2010 is a 10; mostly national forest land"
+# Sandoval, NM; 3500430
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "3500430"] <- "rural; resverations and the moutains in the north; some towns along the highwat"
+```
+
+```{r 1940 - SD}
+####South Dakota####
+# Armstrong, SD 4600010
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4600010"] <- "rural; all the counties Armstrong became are very rural in RUCA 10s mostly; also like no one lives here"
+
+# Buffalo, SD; 4600170; https://catalog.archives.gov/id/5839062
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4600170"] <- "rural; RUCA 2010 is a 10; 11 eds; aprrox half of county is crow reservation land; most of post great depression money for the state went into farming so again rural "
+
+# Shannon, SD; 4601130; https://catalog.archives.gov/id/5839176 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4601130"] <- "rural; ruca 2010 avg 9; looks rural and spread out, simple griding used for eds which also indicates rural, closest plural points are to east and west both around .8"
+
+# Washabaugh, SD; 4601310; https://catalog.archives.gov/id/5839199
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4601310"] <- "rural; very close point to the north of the counyty haas plural1 around .9; gridded eds; eventually split into other counties"
+  
+# Washington, SD; 4601330; https://catalog.archives.gov/id/5839201
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4601330"] <- "rural; right next to wasgabaugh; forested areas in; gridded as well; eventually split into other counties"
+```
+
+```{r 1940 - TX}
+####Texas####
+# Texas, Bandera 4800190; https://catalog.archives.gov/id/5839504 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4800190"] <- "somewhat rural but there is one main city Bandera and two smaller cities, Tarpley and Medina; farms along most of the rivers and offshoots"
+
+# Texas Borden	4800330; 10; https://catalog.archives.gov/id/5839525
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4800330"] <- "rural; 2010 ruca = 10; census says no urban pop in 1940; 1940s map has 5 eds with very little roads or towns"
+  
+# Texas Brooks	4800470 7.5; https://catalog.archives.gov/id/5839543
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4800470"] <- "rural; 2010 ruca = avg 7.5; census says no urban pop in 1940; 1940s map has 5 eds with very little roads; on small town"
+  
+# Texas Chambers	4800710 3.1; https://catalog.archives.gov/id/5839573
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4800710"] <- "rural; 2010 ruca = avg 3.1 but 1940 census says no urban pop in 1940; 1940s map has 8 eds with very spread out and empty space"
+  
+# Texas Crockett	4801050 7; https://catalog.archives.gov/id/5839615
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4801050"] <- "rural; 2010 ruca = 7; 1940 census says no urban population; spread out a lot of rivers; spread out"
+  
+# Texas Culberson	4801090 10; https://catalog.archives.gov/id/5839619 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4801090"] <- "rural; 2010 ruca = 10; some mountains in the south; closest point is to the east; (plural1_ew	0.904799); pretty spread out"
+  
+# Texas Glasscock	4801730 10 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4801730"] <- "rural; 2010 ruca = 10; very spread out and empty space; census says no urban pop in 1940"
+  
+# Texas Hartley	4802050 7; https://catalog.archives.gov/id/5839755
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4802050"] <- "rural; ruca 20210 = 7; in the shapefiles Dalhart is not included; total pop of county was 1,873 and only 241 are urban according to census so lean rural"
+  
+# Texas Hudspeth	4802290 2; https://catalog.archives.gov/id/5839792
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4802290"] <- "rural; 2010 ruca is 2 but 1940 census reported no urban pop; map is very open and spread out with a lot of rivers"
+  
+# Texas Jim Hogg	4802470 7; https://catalog.archives.gov/id/5839816
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4802470"] <- "rural; 2010 ruca = 7; 1940 census reported no urban pop; only 5 eds; spread out map a lot of open space"
+  
+# Texas Kenedy	4802610 10; https://catalog.archives.gov/id/5839835
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4802610"] <- "rural; ruca 2010 =10;1940 census reported no urban pop; population of 700 people; huge empty map"
+  
+# Texas King	4802690 10; https://catalog.archives.gov/id/5839844
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4802690"] <- "rural; ruca 2010 =10; 1940 census reported no urban pop; very spread out empty map"
+  
+# Texas Loving	4803010 2 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4803010"] <- "rural; although ruca 2010 is 2 1940 census reported no urban pop and the pop was onlt 285 people low popD"
+  
+# Texas Mason	4803190 10; https://catalog.archives.gov/id/5839895
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4803190"] <- "rural; ruca 2010 =10; 1940 census reported no urban pop; only 8 eds; mason is the main town; spread out and empty like other counties"
+  
+# Texas Mcmullen	4803110 10; https://catalog.archives.gov/id/5839909
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4803110"] <- "rural; ruca 2010 =10; 1940 census reported no urban pop; only 4 eds a lot of open space" 
+  
+# Texas Rains	4803790 3 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4803790"] <- "1940 census reported no urban pop; 7 eds; a lot of farms and small town roads connecting them; more developed than other texas ones but still rural"
+  
+# Texas San Jacinto	4804070 avg 2.25
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4804070"] <- "ruca 2010 avg 2.25 but 1940 census reported no urban pop; national forsted majority of the county"
+  
+# Texas Sterling	4804310 10; https://catalog.archives.gov/id/5840044
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4804310"] <- "rural; ruca 2010 =10; 1940 census reported no urban pop; 4 eds; sterling is only significant town"
+  
+# Texas Terrell	4804430 10; https://catalog.archives.gov/id/5840058
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4804430"] <- "rural; ruca 2010 =10; 1940 census reported no urban pop; 5 eds; rivers and minimal road network"
+  
+# Texas Yoakum	4805010 7; https://catalog.archives.gov/id/5840135
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4805010"] <- "rural; ruca 2010 7; 1940 census reported no urban pop; only 4 large eds"
+  
+# Texas Zapata	4805050 4; https://catalog.archives.gov/id/5840141
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4805050"] <- "rural; ruca 2010 4 but 1940 census reported no urban pop; 4 large eds"
+```
+
+```{r 1940 - TN}
+####Tennessee####
+# Tennessee Grainger	4700570 2; https://catalog.archives.gov/id/5839292
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4700570"] <- "rural; many mountain and ridges right next to hancock; mostly farms; cities/towns scattered"
+  
+# Tennessee Hancock	4700670 2; https://catalog.archives.gov/id/5839309
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4700670"] <- "rural; many mountain and ridges right next to grainger; most farms; cities/towns scattered"
+  
+# Tennessee Macon	4701110 avg 6.75; https://catalog.archives.gov/id/5839363
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4701110"] <- "rural; large gridded style eds; small cities spread throughout the county connected by main highway system; only largeish city is layfette"
+  
+# Tennessee Stewart	4701610 5.4; 
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4701610"] <- "rural; divded into eds with straight lines; main town Dover (cumberland very small); many farms; large green/nature area in north; closest point which is to the south and has similqr looking topology (plural1_ew	0.755778)"
+  
+# Tennessee Union	4701730 avg 3.2; https://catalog.archives.gov/id/5839459
+counties_missing_plural$plural_notes[counties_missing_plural$st_cnty_yr_id == "4701730"] <- "rural; large forested area in northwest; river splitting county; a lot of ridges and mountains "
+```
+
+```{r Save out file}
+write.csv(counties_missing_plural, "counties_missing_plural_edited.csv")
+```
+
